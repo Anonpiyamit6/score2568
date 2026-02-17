@@ -18,22 +18,11 @@
     .sub-tab-inactive:hover { color: #0ea5e9; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade { animation: fadeIn 0.3s ease-out; }
-    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   </style>
 </head>
 <body class="h-full bg-gradient-to-br from-sky-50 via-white to-blue-50">
 
-  <!-- Loading Screen -->
-  <div id="loading-overlay">
-    <div class="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p id="loading-text" class="text-sky-600 font-semibold mb-2">กำลังเชื่อมต่อฐานข้อมูล...</p>
-    <p id="loading-subtext" class="text-xs text-gray-400">กรุณารอสักครู่</p>
-    <button onclick="forceOpenApp()" id="force-open-btn" class="hidden mt-4 text-sm text-red-500 underline hover:text-red-700">
-      เข้าใช้งานแบบ Offline (ข้ามการโหลด)
-    </button>
-  </div>
-
-  <div id="app" class="h-full overflow-auto hidden">
+  <div id="app" class="h-full overflow-auto">
     <!-- Header -->
     <header class="bg-white border-b border-sky-100 sticky top-0 z-40 card-shadow">
       <div class="max-w-7xl mx-auto px-4 py-4">
@@ -50,7 +39,11 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span id="connection-status" class="text-xs text-gray-400 font-medium">● Connecting...</span>
+            <!-- Status Indicator -->
+            <div id="status-badge" class="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200">
+               <div id="status-dot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+               <span id="status-text" class="text-xs font-medium text-gray-600">กำลังเชื่อมต่อ...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -145,7 +138,7 @@
                    </tr>
                  </thead>
                  <tbody id="student-list-preview">
-                   <!-- Students Render Here -->
+                   <tr><td colspan="4" class="p-4 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>
                  </tbody>
                </table>
              </div>
@@ -189,7 +182,9 @@
                  <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">เกรด</th>
                </tr>
              </thead>
-             <tbody id="score-table-body"></tbody>
+             <tbody id="score-table-body">
+               <tr><td colspan="6" class="p-8 text-center text-gray-400">กำลังโหลด...</td></tr>
+             </tbody>
            </table>
         </div>
       </section>
@@ -240,7 +235,7 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const COLLECTION_NAME = "school_data_v2";
+    const COLLECTION_NAME = "school_data_v3"; // Bumped version to force fresh data
 
     // State Variables
     let students = [];
@@ -248,36 +243,36 @@
     let classes = new Set();
     let isConnected = false;
 
-    // ==================== EMERGENCY LOADING FIX ====================
-    // Force remove loader after 8 seconds if connection fails
-    const loadTimeout = setTimeout(() => {
-        if(!isConnected) {
-            const loader = document.getElementById('loading-overlay');
-            const subtext = document.getElementById('loading-subtext');
-            const btn = document.getElementById('force-open-btn');
-            
-            document.getElementById('loading-text').textContent = "ใช้เวลานานผิดปกติ";
-            document.getElementById('loading-text').className = "text-red-500 font-bold mb-2";
-            subtext.innerHTML = "โปรดตรวจสอบใน Firebase Console ว่า:<br>1. สร้าง Database แล้ว<br>2. ตั้งค่า Rules เป็น Test Mode";
-            subtext.className = "text-sm text-gray-600 text-center";
-            btn.classList.remove('hidden');
+    // Helper: Update Status UI
+    function setStatus(state, msg) {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        const badge = document.getElementById('status-badge');
+        
+        text.textContent = msg;
+        if(state === 'ok') {
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            badge.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200";
+            text.className = "text-xs font-medium text-emerald-700";
+        } else if(state === 'error') {
+            dot.className = "w-2 h-2 rounded-full bg-red-500";
+            badge.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200";
+            text.className = "text-xs font-medium text-red-700";
         }
-    }, 8000);
-
-    window.forceOpenApp = function() {
-        document.getElementById('loading-overlay').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        showToast('เข้าใช้งานโหมด Offline (ข้อมูลอาจไม่บันทึก)', 'error');
     }
 
     // ==================== APP INITIALIZATION ====================
     async function initApp() {
+      // Set date immediately
+      document.getElementById('att-date').valueAsDate = new Date();
+      
       const q = query(collection(db, COLLECTION_NAME));
       
+      // Listen for data
       onSnapshot(q, (snapshot) => {
-        // SUCCESS: Connection established
+        // SUCCESS
         isConnected = true;
-        clearTimeout(loadTimeout);
+        setStatus('ok', 'Online');
         
         const tempStudents = [];
         const tempConfigs = [];
@@ -300,28 +295,17 @@
         classes = tempClasses;
 
         updateUI();
-        
-        // Hide Loading Properly
-        document.getElementById('loading-overlay').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        document.getElementById('connection-status').textContent = "● Online";
-        document.getElementById('connection-status').className = "text-xs text-emerald-500 font-medium";
 
       }, (error) => {
-        // ERROR: Permission denied or Network issue
-        clearTimeout(loadTimeout);
+        // ERROR HANDLING
         console.error("Firebase Error:", error);
-        
-        document.getElementById('loading-text').textContent = "เกิดข้อผิดพลาด";
-        document.getElementById('loading-subtext').textContent = "Code: " + error.code;
-        document.getElementById('force-open-btn').classList.remove('hidden');
-        
         if (error.code === 'permission-denied') {
-            alert("Permission Denied: กรุณาไปที่ Firebase Console > Firestore > Rules แล้วเปลี่ยน allow read, write เป็น true");
+            setStatus('error', 'สิทธิ์ถูกปฏิเสธ (Check Rules)');
+            showToast("Error: สิทธิ์ถูกปฏิเสธ กรุณาแก้ Rules ใน Firebase", "error");
+        } else {
+            setStatus('error', 'Offline');
         }
       });
-
-      document.getElementById('att-date').valueAsDate = new Date();
     }
 
     // ==================== UI UPDATES ====================
@@ -330,16 +314,20 @@
       const tbody = document.getElementById('student-list-preview');
       document.getElementById('total-students').textContent = students.length;
       
-      tbody.innerHTML = students.map(s => `
-        <tr class="border-b hover:bg-gray-50">
-          <td class="px-4 py-2">${s.student_id}</td>
-          <td class="px-4 py-2">${s.full_name}</td>
-          <td class="px-4 py-2"><span class="bg-gray-100 px-2 py-0.5 rounded text-xs">${s.class_name}</span></td>
-          <td class="px-4 py-2">
-            <button onclick="window.deleteStudent('${s.id}')" class="text-red-500 hover:text-red-700">🗑️</button>
-          </td>
-        </tr>
-      `).join('');
+      if(students.length === 0) {
+         tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">ยังไม่มีข้อมูลนักเรียน</td></tr>';
+      } else {
+         tbody.innerHTML = students.map(s => `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="px-4 py-2">${s.student_id}</td>
+              <td class="px-4 py-2">${s.full_name}</td>
+              <td class="px-4 py-2"><span class="bg-gray-100 px-2 py-0.5 rounded text-xs">${s.class_name}</span></td>
+              <td class="px-4 py-2">
+                <button onclick="window.deleteStudent('${s.id}')" class="text-red-500 hover:text-red-700">🗑️</button>
+              </td>
+            </tr>
+         `).join('');
+      }
 
       // 2. Update Class Dropdowns
       const classOptions = ['<option value="">ทั้งหมด</option>', ...Array.from(classes).sort().map(c => `<option value="${c}">${c}</option>`)].join('');
@@ -484,6 +472,7 @@
        const filterClass = document.getElementById('score-filter-class').value;
        const filteredStudents = filterClass ? students.filter(s => s.class_name === filterClass) : students;
        
+       // Clear old headers (keep first 3)
        const headerRow = document.querySelector('#score-section thead tr');
        while(headerRow.children.length > 6) headerRow.removeChild(headerRow.children[3]); 
        
@@ -498,6 +487,11 @@
          <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">เกรด</th>
        `;
        headerRow.innerHTML = baseHeaders + configHeaders + endHeaders;
+
+       if(filteredStudents.length === 0) {
+         tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-gray-400">ไม่พบนักเรียน</td></tr>';
+         return;
+       }
 
        tbody.innerHTML = filteredStudents.map(s => {
          const scores = s.scores || {};
