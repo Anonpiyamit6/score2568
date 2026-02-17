@@ -13,26 +13,24 @@
     .card-shadow { box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15); }
     .btn-primary { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
     .btn-primary:hover { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
-    /* Styles for Tabs in Add Student Section */
     .sub-tab-active { border-bottom: 2px solid #0ea5e9; color: #0284c7; font-weight: bold; }
     .sub-tab-inactive { border-bottom: 2px solid transparent; color: #64748b; }
     .sub-tab-inactive:hover { color: #0ea5e9; }
-    
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade { animation: fadeIn 0.3s ease-out; }
-    
-    /* Loading Overlay */
-    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   </style>
 </head>
 <body class="h-full bg-gradient-to-br from-sky-50 via-white to-blue-50">
 
   <!-- Loading Screen -->
   <div id="loading-overlay">
-    <div class="text-center">
-      <div class="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p class="text-sky-600 font-semibold">กำลังเชื่อมต่อฐานข้อมูล...</p>
-    </div>
+    <div class="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p id="loading-text" class="text-sky-600 font-semibold mb-2">กำลังเชื่อมต่อฐานข้อมูล...</p>
+    <p id="loading-subtext" class="text-xs text-gray-400">กรุณารอสักครู่</p>
+    <button onclick="forceOpenApp()" id="force-open-btn" class="hidden mt-4 text-sm text-red-500 underline hover:text-red-700">
+      เข้าใช้งานแบบ Offline (ข้ามการโหลด)
+    </button>
   </div>
 
   <div id="app" class="h-full overflow-auto hidden">
@@ -52,7 +50,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span id="connection-status" class="text-xs text-emerald-500 font-medium">● Online</span>
+            <span id="connection-status" class="text-xs text-gray-400 font-medium">● Connecting...</span>
           </div>
         </div>
       </div>
@@ -76,7 +74,7 @@
       <!-- ==================== SETUP SECTION ==================== -->
       <section id="setup-section" class="animate-fade space-y-6">
         
-        <!-- Add Student Management (New Design) -->
+        <!-- Add Student Management -->
         <div class="bg-white rounded-2xl p-6 card-shadow">
           <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center">👨‍🎓</span>
@@ -86,8 +84,8 @@
           <!-- Sub Tabs -->
           <div class="flex border-b border-gray-200 mb-4">
             <button onclick="switchSubTab('single')" id="subtab-single" class="sub-tab-active py-2 px-4 text-sm transition-colors">เพิ่มทีละคน</button>
-            <button onclick="switchSubTab('multiple')" id="subtab-multiple" class="sub-tab-inactive py-2 px-4 text-sm transition-colors">เพิ่มแบบกลุ่ม (วางข้อความ)</button>
-            <button onclick="switchSubTab('file')" id="subtab-file" class="sub-tab-inactive py-2 px-4 text-sm transition-colors">นำเข้าไฟล์ (Excel/CSV)</button>
+            <button onclick="switchSubTab('multiple')" id="subtab-multiple" class="sub-tab-inactive py-2 px-4 text-sm transition-colors">เพิ่มแบบกลุ่ม</button>
+            <button onclick="switchSubTab('file')" id="subtab-file" class="sub-tab-inactive py-2 px-4 text-sm transition-colors">นำเข้าไฟล์</button>
           </div>
 
           <!-- 1. Add Single -->
@@ -242,27 +240,52 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const COLLECTION_NAME = "school_data_v2"; // Changed collection to ensure clean start
+    const COLLECTION_NAME = "school_data_v2";
 
     // State Variables
     let students = [];
     let configs = [];
     let classes = new Set();
-    let attendanceData = {}; // Temp store for UI
+    let isConnected = false;
+
+    // ==================== EMERGENCY LOADING FIX ====================
+    // Force remove loader after 8 seconds if connection fails
+    const loadTimeout = setTimeout(() => {
+        if(!isConnected) {
+            const loader = document.getElementById('loading-overlay');
+            const subtext = document.getElementById('loading-subtext');
+            const btn = document.getElementById('force-open-btn');
+            
+            document.getElementById('loading-text').textContent = "ใช้เวลานานผิดปกติ";
+            document.getElementById('loading-text').className = "text-red-500 font-bold mb-2";
+            subtext.innerHTML = "โปรดตรวจสอบใน Firebase Console ว่า:<br>1. สร้าง Database แล้ว<br>2. ตั้งค่า Rules เป็น Test Mode";
+            subtext.className = "text-sm text-gray-600 text-center";
+            btn.classList.remove('hidden');
+        }
+    }, 8000);
+
+    window.forceOpenApp = function() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        showToast('เข้าใช้งานโหมด Offline (ข้อมูลอาจไม่บันทึก)', 'error');
+    }
 
     // ==================== APP INITIALIZATION ====================
     async function initApp() {
-      // Listener for Realtime Updates
       const q = query(collection(db, COLLECTION_NAME));
       
       onSnapshot(q, (snapshot) => {
+        // SUCCESS: Connection established
+        isConnected = true;
+        clearTimeout(loadTimeout);
+        
         const tempStudents = [];
         const tempConfigs = [];
         const tempClasses = new Set();
 
         snapshot.forEach((doc) => {
           const data = doc.data();
-          data.id = doc.id; // Firestore Document ID
+          data.id = doc.id;
           
           if (data.type === 'student') {
             tempStudents.push(data);
@@ -272,23 +295,32 @@
           }
         });
 
-        // Update State
         students = tempStudents.sort((a,b) => a.student_id.localeCompare(b.student_id));
         configs = tempConfigs.sort((a,b) => a.created_at - b.created_at);
         classes = tempClasses;
 
-        // Update UI
         updateUI();
         
-        // Hide Loading
+        // Hide Loading Properly
         document.getElementById('loading-overlay').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
+        document.getElementById('connection-status').textContent = "● Online";
+        document.getElementById('connection-status').className = "text-xs text-emerald-500 font-medium";
+
       }, (error) => {
+        // ERROR: Permission denied or Network issue
+        clearTimeout(loadTimeout);
         console.error("Firebase Error:", error);
-        showToast("เกิดข้อผิดพลาดในการโหลดข้อมูล", "error");
+        
+        document.getElementById('loading-text').textContent = "เกิดข้อผิดพลาด";
+        document.getElementById('loading-subtext').textContent = "Code: " + error.code;
+        document.getElementById('force-open-btn').classList.remove('hidden');
+        
+        if (error.code === 'permission-denied') {
+            alert("Permission Denied: กรุณาไปที่ Firebase Console > Firestore > Rules แล้วเปลี่ยน allow read, write เป็น true");
+        }
       });
 
-      // Set Date
       document.getElementById('att-date').valueAsDate = new Date();
     }
 
@@ -348,11 +380,10 @@
           attendance: {}
         });
         showToast('เพิ่มนักเรียนเรียบร้อย');
-        // Clear inputs
         document.getElementById('add-id').value = '';
         document.getElementById('add-name').value = '';
       } catch (e) {
-        showToast('บันทึกไม่สำเร็จ', 'error');
+        showToast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
       }
     }
 
@@ -388,10 +419,8 @@
         const rows = text.split('\n');
         let count = 0;
         
-        // Batch promises to speed up
         const promises = [];
-
-        for (let i = 1; i < rows.length; i++) { // Skip header
+        for (let i = 1; i < rows.length; i++) { 
            const cols = rows[i].split(',').map(s => s.trim());
            if (cols.length >= 3) {
              const [id, name, className] = cols;
@@ -409,7 +438,7 @@
         fileInput.value = '';
         document.getElementById('file-name').textContent = 'ยังไม่ได้เลือกไฟล์';
       };
-      reader.readAsText(file); // Ensure UTF-8
+      reader.readAsText(file);
     }
 
     window.downloadTemplate = function() {
@@ -445,7 +474,7 @@
     }
 
     window.deleteConfig = async function(id) {
-       if(confirm('ลบหัวข้อคะแนนนี้? ข้อมูลคะแนนในช่องนี้จะหายไป')) {
+       if(confirm('ลบหัวข้อคะแนนนี้?')) {
          await deleteDoc(doc(db, COLLECTION_NAME, id));
        }
     }
@@ -455,13 +484,9 @@
        const filterClass = document.getElementById('score-filter-class').value;
        const filteredStudents = filterClass ? students.filter(s => s.class_name === filterClass) : students;
        
-       // Headers
        const headerRow = document.querySelector('#score-section thead tr');
-       // Remove old dynamic headers
        while(headerRow.children.length > 6) headerRow.removeChild(headerRow.children[3]); 
        
-       // Add new headers
-       // Note: Simplified for brevity, in real DOM manipulation we'd be more precise
        const baseHeaders = `
          <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">รหัส</th>
          <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">ชื่อ-สกุล</th>
@@ -474,13 +499,12 @@
        `;
        headerRow.innerHTML = baseHeaders + configHeaders + endHeaders;
 
-       // Body
        tbody.innerHTML = filteredStudents.map(s => {
          const scores = s.scores || {};
          let total = 0;
          const scoreInputs = configs.map(c => {
            const val = scores[c.id] || 0;
-           total += (val / c.max) * c.weight; // Normalize to weight
+           total += (val / c.max) * c.weight;
            return `<td class="p-2 text-center"><input type="number" value="${val}" min="0" max="${c.max}" 
                    class="w-16 border rounded text-center text-sm focus:bg-sky-50"
                    onchange="window.updateScore('${s.id}', '${c.id}', this.value)"></td>`;
@@ -503,9 +527,7 @@
        const student = students.find(s => s.id === studentId);
        const scores = student.scores || {};
        scores[configId] = parseFloat(value);
-       
        await updateDoc(doc(db, COLLECTION_NAME, studentId), { scores });
-       // No need to re-render, listener will do it or local input persists
     }
 
     function calculateGrade(score) {
@@ -520,11 +542,9 @@
     }
     
     window.exportScores = function() {
-        // Prevent auto-download issues by creating element dynamically on click only
         let csv = "\uFEFFรหัส,ชื่อ,ห้อง";
         configs.forEach(c => csv += `,${c.name}`);
         csv += ",รวม,เกรด\n";
-        
         students.forEach(s => {
            let row = `${s.student_id},${s.full_name},${s.class_name}`;
            let total = 0;
@@ -536,16 +556,13 @@
            row += `,${total.toFixed(2)},${calculateGrade(total)}`;
            csv += row + "\n";
         });
-        
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.href = url;
+        link.href = URL.createObjectURL(blob);
         link.download = "scores_export.csv";
-        document.body.appendChild(link); // Append to body
+        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link); // Remove immediately
-        URL.revokeObjectURL(url);
+        document.body.removeChild(link);
     }
 
     // ==================== ATTENDANCE LOGIC ====================
@@ -570,7 +587,6 @@
          let colorClass = 'bg-emerald-100 border-emerald-500';
          let icon = '✅';
          let label = 'มา';
-
          if(status === 'absent') { colorClass = 'bg-red-100 border-red-500'; icon = '❌'; label = 'ขาด'; }
          if(status === 'sick') { colorClass = 'bg-yellow-100 border-yellow-500'; icon = '🤒'; label = 'ลาป่วย'; }
 
@@ -591,30 +607,23 @@
     }
 
     window.toggleAttendance = async function(id) {
-       // Optimistic UI Update (Visual only first)
        const date = document.getElementById('att-date').value;
        const student = students.find(s => s.id === id);
        if(!student.attendance) student.attendance = {};
-       
        const current = student.attendance[date] || 'present';
        const states = ['present', 'absent', 'sick'];
        const next = states[(states.indexOf(current) + 1) % states.length];
-       
-       student.attendance[date] = next; // Update Local State
-       window.loadAttendanceView(); // Re-render Grid
+       student.attendance[date] = next;
+       window.loadAttendanceView();
     }
 
     window.saveAttendance = async function() {
        const date = document.getElementById('att-date').value;
        const classSelect = document.getElementById('att-class-select').value;
        const classStudents = students.filter(s => s.class_name === classSelect);
-       
        const promises = classStudents.map(s => {
-          return updateDoc(doc(db, COLLECTION_NAME, s.id), {
-             attendance: s.attendance
-          });
+          return updateDoc(doc(db, COLLECTION_NAME, s.id), { attendance: s.attendance });
        });
-
        await Promise.all(promises);
        showToast('บันทึกเวลาเรียนเรียบร้อย');
     }
