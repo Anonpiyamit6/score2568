@@ -8,220 +8,200 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Sarabun', sans-serif; }
-    .tab-active { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; }
+    .tab-active { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
     .tab-inactive { background: #f1f5f9; color: #64748b; }
-    .card-shadow { box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15); }
-    .btn-primary { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
-    .btn-primary:hover { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
-    .sub-tab-active { border-bottom: 2px solid #0ea5e9; color: #0284c7; font-weight: bold; }
-    .sub-tab-inactive { border-bottom: 2px solid transparent; color: #64748b; }
-    .sub-tab-inactive:hover { color: #0ea5e9; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-inactive:hover { background: #e2e8f0; color: #475569; }
+    
+    /* Table Styling */
+    .table-container { overflow-x: auto; border-radius: 0.75rem; border: 1px solid #e2e8f0; }
+    thead th { position: sticky; top: 0; background: #f8fafc; z-index: 10; }
+    
+    /* Input removal arrows */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    
     .animate-fade { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="h-full bg-gradient-to-br from-sky-50 via-white to-blue-50">
+<body class="h-full bg-slate-50 text-slate-800">
 
-  <div id="app" class="h-full overflow-auto">
+  <div id="app" class="h-full flex flex-col">
     <!-- Header -->
-    <header class="bg-white border-b border-sky-100 sticky top-0 z-40 card-shadow">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center">
-              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-xs text-sky-600 font-medium">โรงเรียนตัวอย่าง</p>
-              <h1 class="text-lg md:text-xl font-bold text-gray-800">ระบบบริหารคะแนน</h1>
-            </div>
+    <header class="bg-white border-b border-slate-200 shadow-sm z-30 flex-none">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center text-xl shadow-lg">📊</div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight">ระบบคะแนน</h1>
+            <p class="text-xs text-slate-500">School Management System</p>
           </div>
-          <div class="flex items-center gap-2">
-            <!-- Status Indicator -->
-            <div id="status-badge" class="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200">
-               <div id="status-dot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-               <span id="status-text" class="text-xs font-medium text-gray-600">กำลังเชื่อมต่อ...</span>
-            </div>
-          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="status-badge" class="px-2 py-1 rounded-full bg-slate-100 text-xs font-medium text-slate-500 flex items-center gap-1">
+            <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="status-text">Connecting...</span>
+          </span>
         </div>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
-      <!-- Main Tabs -->
-      <div class="flex flex-wrap gap-2 mb-6">
-        <button id="tab-setup" onclick="switchTab('setup')" class="tab-active px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
-          <span>⚙️</span> ตั้งค่า
-        </button>
-        <button id="tab-score" onclick="switchTab('score')" class="tab-inactive px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
-          <span>📊</span> คะแนน
-        </button>
-        <button id="tab-attendance" onclick="switchTab('attendance')" class="tab-inactive px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
-          <span>⏰</span> เวลาเรียน
-        </button>
-      </div>
-
-      <!-- ==================== SETUP SECTION ==================== -->
-      <section id="setup-section" class="animate-fade space-y-6">
+    <main class="flex-1 overflow-auto p-4 md:p-6">
+      <div class="max-w-7xl mx-auto space-y-6">
         
-        <!-- Add Student Management -->
-        <div class="bg-white rounded-2xl p-6 card-shadow">
-          <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center">👨‍🎓</span>
-            จัดการรายชื่อนักเรียน
-          </h2>
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 p-1 bg-white rounded-xl shadow-sm border border-slate-100 w-fit">
+          <button onclick="switchTab('setup')" id="tab-setup" class="tab-active px-6 py-2 rounded-lg text-sm font-semibold transition-all">⚙️ ตั้งค่าข้อมูล</button>
+          <button onclick="switchTab('score')" id="tab-score" class="tab-inactive px-6 py-2 rounded-lg text-sm font-semibold transition-all">📝 บันทึกคะแนน</button>
+          <button onclick="switchTab('attendance')" id="tab-attendance" class="tab-inactive px-6 py-2 rounded-lg text-sm font-semibold transition-all">📅 เช็คชื่อ</button>
+        </div>
 
-          <!-- Sub Tabs -->
-          <div class="flex border-b border-gray-200 mb-4">
-            <button onclick="switchSubTab('single')" id="subtab-single" class="sub-tab-active py-2 px-4 text-sm transition-colors">เพิ่มทีละคน</button>
-            <button onclick="switchSubTab('multiple')" id="subtab-multiple" class="sub-tab-inactive py-2 px-4 text-sm transition-colors">เพิ่มแบบกลุ่ม</button>
-            <button onclick="switchSubTab('file')" id="subtab-file" class="sub-tab-inactive py-2 px-4 text-sm transition-colors">นำเข้าไฟล์</button>
-          </div>
-
-          <!-- 1. Add Single -->
-          <div id="view-single" class="animate-fade">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">รหัสนักเรียน</label>
-                <input type="text" id="add-id" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-sky-500" placeholder="เช่น 65001">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล</label>
-                <input type="text" id="add-name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-sky-500" placeholder="เช่น ด.ช.รักเรียน">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">ห้องเรียน</label>
-                <input type="text" id="add-class" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-sky-500" placeholder="เช่น ม.1/1">
-              </div>
-            </div>
-            <button onclick="addSingleStudent()" class="mt-4 btn-primary text-white px-6 py-2 rounded-lg text-sm w-full sm:w-auto">บันทึกข้อมูล</button>
-          </div>
-
-          <!-- 2. Add Multiple -->
-          <div id="view-multiple" class="hidden animate-fade">
-            <label class="block text-sm font-medium text-gray-700 mb-2">วางรายชื่อ (บรรทัดละ 1 คน: รหัส, ชื่อ, ห้อง)</label>
-            <textarea id="add-multi-text" rows="5" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-sky-500 font-mono text-sm" 
-              placeholder="65001, นาย ก, ม.1/1&#10;65002, นาย ข, ม.1/1&#10;65003, นาย ค, ม.1/2"></textarea>
-            <button onclick="addMultipleStudents()" class="mt-3 btn-primary text-white px-6 py-2 rounded-lg text-sm">ประมวลผลและบันทึก</button>
-          </div>
-
-          <!-- 3. Import File -->
-          <div id="view-file" class="hidden animate-fade">
-            <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-              <input type="file" id="import-file" accept=".csv,.xlsx,.xls" class="hidden" onchange="document.getElementById('file-name').textContent = this.files[0]?.name">
-              <button onclick="document.getElementById('import-file').click()" class="mx-auto bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition-colors mb-2">
-                📂 เลือกไฟล์
-              </button>
-              <p id="file-name" class="text-sm text-gray-500">ยังไม่ได้เลือกไฟล์</p>
-              <p class="text-xs text-gray-400 mt-2">รองรับ .csv (UTF-8)</p>
-            </div>
-            <div class="flex gap-2 mt-4">
-              <button onclick="importStudentsFromFile()" class="btn-primary text-white px-6 py-2 rounded-lg text-sm">📤 เริ่มนำเข้า</button>
-              <button onclick="downloadTemplate()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">📥 โหลดแบบฟอร์ม</button>
-            </div>
-          </div>
+        <!-- ==================== 1. SETUP SECTION ==================== -->
+        <section id="setup-section" class="space-y-6 animate-fade">
           
-          <!-- Recent Students List -->
-          <div class="mt-6 border-t pt-4">
-             <h3 class="text-sm font-semibold text-gray-700 mb-2">รายชื่อนักเรียนล่าสุด (ทั้งหมด <span id="total-students">0</span> คน)</h3>
-             <div class="max-h-60 overflow-y-auto border rounded-lg">
-               <table class="w-full text-sm text-left">
-                 <thead class="bg-gray-50 text-gray-600 sticky top-0">
-                   <tr>
-                     <th class="px-4 py-2">รหัส</th>
-                     <th class="px-4 py-2">ชื่อ</th>
-                     <th class="px-4 py-2">ห้อง</th>
-                     <th class="px-4 py-2 w-20">ลบ</th>
+          <!-- Score Config (สำคัญมาก ต้องตั้งค่าก่อน) -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+              <span class="bg-sky-100 text-sky-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+              โครงสร้างคะแนน (ต้องเพิ่มก่อนบันทึกคะแนน)
+            </h2>
+            <div class="flex flex-wrap gap-2 mb-4 items-end bg-slate-50 p-4 rounded-lg">
+               <div class="flex-1 min-w-[200px]">
+                 <label class="text-xs font-semibold text-slate-500 ml-1">ชื่อรายการ (เช่น กลางภาค)</label>
+                 <input type="text" id="config-name" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+               </div>
+               <div class="w-24">
+                 <label class="text-xs font-semibold text-slate-500 ml-1">คะแนนเต็ม</label>
+                 <input type="number" id="config-max" placeholder="1-100" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm text-center outline-none">
+               </div>
+               <div class="w-24">
+                 <label class="text-xs font-semibold text-slate-500 ml-1">น้ำหนัก %</label>
+                 <input type="number" id="config-weight" placeholder="%" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm text-center outline-none">
+               </div>
+               <button onclick="addScoreConfig()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-colors h-[38px]">
+                 + เพิ่ม
+               </button>
+            </div>
+            
+            <!-- List of Configs -->
+            <div id="config-list-container" class="space-y-2">
+              <p class="text-sm text-slate-400 text-center py-2">ยังไม่มีโครงสร้างคะแนน</p>
+            </div>
+          </div>
+
+          <!-- Student Management -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+              <span class="bg-sky-100 text-sky-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+              รายชื่อนักเรียน
+            </h2>
+            
+            <div class="flex gap-2 border-b border-slate-200 mb-4">
+               <button onclick="showSubTab('single')" class="px-4 py-2 text-sm font-medium border-b-2 border-sky-600 text-sky-700 subtab-btn" id="btn-single">เพิ่มทีละคน</button>
+               <button onclick="showSubTab('multi')" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 subtab-btn" id="btn-multi">เพิ่มแบบกลุ่ม</button>
+            </div>
+
+            <!-- Single Add -->
+            <div id="view-single" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+              <input type="text" id="add-id" placeholder="รหัส (เช่น 6601)" class="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500">
+              <input type="text" id="add-name" placeholder="ชื่อ-นามสกุล" class="md:col-span-2 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500">
+              <div class="flex gap-2">
+                <input type="text" id="add-class" placeholder="ห้อง (ม.1/1)" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500">
+                <button onclick="addSingleStudent()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 rounded-lg shadow-sm">บันทึก</button>
+              </div>
+            </div>
+
+            <!-- Multi Add -->
+            <div id="view-multi" class="hidden mb-6">
+              <textarea id="add-multi-text" rows="4" class="w-full border border-slate-300 rounded-lg p-3 text-sm font-mono mb-2" placeholder="6601, นาย ก, ม.1/1&#10;6602, นาย ข, ม.1/1"></textarea>
+              <button onclick="addMultipleStudents()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm shadow-sm">บันทึกทั้งหมด</button>
+            </div>
+
+            <!-- Student Table -->
+            <div class="table-container max-h-[400px]">
+              <table class="w-full text-sm text-left">
+                <thead class="text-slate-600 bg-slate-100 border-b border-slate-200 uppercase text-xs">
+                  <tr>
+                    <th class="px-4 py-3">รหัส</th>
+                    <th class="px-4 py-3">ชื่อ-สกุล</th>
+                    <th class="px-4 py-3">ห้อง</th>
+                    <th class="px-4 py-3 text-center w-20">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="student-list-body" class="bg-white divide-y divide-slate-100">
+                  <tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 2. SCORE SECTION ==================== -->
+        <section id="score-section" class="hidden animate-fade space-y-4">
+          <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200 gap-3">
+             <div class="flex items-center gap-3">
+                <span class="text-sm font-semibold text-slate-700">กรองห้องเรียน:</span>
+                <select id="score-class-filter" onchange="renderScoreTable()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-sky-500 min-w-[150px]">
+                  <option value="">ทั้งหมด</option>
+                </select>
+             </div>
+             <button onclick="exportScores()" class="flex items-center gap-2 bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors">
+               📥 Export CSV
+             </button>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+             <div class="table-container max-h-[calc(100vh-250px)]">
+               <table class="w-full text-sm">
+                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                   <tr id="score-table-head">
+                     <!-- Javascript will populate this -->
                    </tr>
                  </thead>
-                 <tbody id="student-list-preview">
-                   <tr><td colspan="4" class="p-4 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>
+                 <tbody id="score-table-body" class="divide-y divide-slate-100">
+                    <!-- Javascript will populate this -->
                  </tbody>
                </table>
              </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Score Configuration -->
-        <div class="bg-white rounded-2xl p-6 card-shadow">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">🎯 ตั้งค่าโครงสร้างคะแนน</h2>
-          <div class="flex gap-2 mb-4">
-             <input type="text" id="config-name" placeholder="ชื่อ (เช่น สอบกลางภาค)" class="border px-3 py-2 rounded-lg text-sm flex-1">
-             <input type="number" id="config-max" placeholder="คะแนนเต็ม" class="border px-3 py-2 rounded-lg text-sm w-24">
-             <input type="number" id="config-weight" placeholder="น้ำหนัก %" class="border px-3 py-2 rounded-lg text-sm w-24">
-             <button onclick="addScoreConfig()" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">เพิ่ม</button>
-          </div>
-          <div id="score-config-list" class="space-y-2"></div>
-        </div>
-      </section>
+        <!-- ==================== 3. ATTENDANCE SECTION ==================== -->
+        <section id="attendance-section" class="hidden animate-fade space-y-4">
+           <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">เลือกห้อง</label>
+                <select id="att-class-select" onchange="renderAttendance()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm min-w-[150px] outline-none">
+                  <option value="">-- เลือกห้อง --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">วันที่</label>
+                <input type="date" id="att-date" onchange="renderAttendance()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none">
+              </div>
+              <div class="ml-auto">
+                <button onclick="saveAttendance()" class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-md">บันทึก</button>
+              </div>
+           </div>
 
-      <!-- ==================== SCORE SECTION ==================== -->
-      <section id="score-section" class="hidden animate-fade space-y-6">
-        <div class="bg-white rounded-2xl p-4 card-shadow flex flex-wrap gap-3 justify-between items-center">
-           <select id="score-filter-class" onchange="renderScoreTable()" class="border px-4 py-2 rounded-lg text-sm">
-             <option value="">ทุกห้องเรียน</option>
-           </select>
-           <button onclick="exportScores()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-             <span>📥</span> Export Excel
-           </button>
-        </div>
+           <div id="att-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <!-- Grid Items -->
+           </div>
+        </section>
 
-        <div class="bg-white rounded-2xl p-6 card-shadow overflow-hidden">
-           <table class="w-full min-w-[600px]">
-             <thead class="bg-sky-50">
-               <tr>
-                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">รหัส</th>
-                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">ชื่อ-สกุล</th>
-                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">ห้อง</th>
-                 <!-- Dynamic Headers -->
-                 <th id="score-headers-start" class="hidden"></th> 
-                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">รวม</th>
-                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">เกรด</th>
-               </tr>
-             </thead>
-             <tbody id="score-table-body">
-               <tr><td colspan="6" class="p-8 text-center text-gray-400">กำลังโหลด...</td></tr>
-             </tbody>
-           </table>
-        </div>
-      </section>
-
-      <!-- ==================== ATTENDANCE SECTION ==================== -->
-      <section id="attendance-section" class="hidden animate-fade space-y-6">
-        <div class="bg-white rounded-2xl p-6 card-shadow">
-          <div class="flex flex-wrap gap-4 items-end">
-            <div>
-               <label class="block text-sm text-gray-600 mb-1">เลือกห้องเรียน</label>
-               <select id="att-class-select" onchange="loadAttendanceView()" class="border px-4 py-2 rounded-lg text-sm w-full min-w-[150px]">
-                 <option value="">-- กรุณาเลือก --</option>
-               </select>
-            </div>
-            <div>
-               <label class="block text-sm text-gray-600 mb-1">วันที่</label>
-               <input type="date" id="att-date" onchange="loadAttendanceView()" class="border px-4 py-2 rounded-lg text-sm">
-            </div>
-            <button onclick="saveAttendance()" class="btn-primary text-white px-6 py-2 rounded-lg text-sm ml-auto">💾 บันทึกการเช็คชื่อ</button>
-          </div>
-        </div>
-
-        <div id="attendance-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <div class="col-span-full text-center py-10 text-gray-400">กรุณาเลือกห้องเรียนและวันที่เพื่อเริ่มเช็คชื่อ</div>
-        </div>
-      </section>
-
+      </div>
     </main>
 
     <!-- Toast Notification -->
-    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // --- Firebase Configuration ---
     const firebaseConfig = {
       apiKey: "AIzaSyBiNUMgq6947gGmgRIzjK-pBgvlwH9sl8o",
       authDomain: "score-34a9b.firebaseapp.com",
@@ -232,310 +212,353 @@
       measurementId: "G-ZWJTFQJVNS"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const COLLECTION_NAME = "school_data_v3"; // Bumped version to force fresh data
+    const COLLECTION = "school_data_v4"; // เปลี่ยนชื่อ Collection เพื่อล้างค่าเก่าที่อาจจะผิดพลาด
 
-    // State Variables
+    // --- State ---
     let students = [];
     let configs = [];
     let classes = new Set();
-    let isConnected = false;
 
-    // Helper: Update Status UI
-    function setStatus(state, msg) {
-        const dot = document.getElementById('status-dot');
-        const text = document.getElementById('status-text');
-        const badge = document.getElementById('status-badge');
-        
-        text.textContent = msg;
-        if(state === 'ok') {
-            dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-            badge.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200";
-            text.className = "text-xs font-medium text-emerald-700";
-        } else if(state === 'error') {
-            dot.className = "w-2 h-2 rounded-full bg-red-500";
-            badge.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200";
-            text.className = "text-xs font-medium text-red-700";
-        }
-    }
+    // --- Helper Functions ---
+    window.showToast = (msg, type = 'success') => {
+      const box = document.createElement('div');
+      box.className = `${type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'} text-white px-4 py-3 rounded-lg shadow-lg text-sm animate-fade flex items-center gap-2 font-medium`;
+      box.innerHTML = type === 'error' ? `<span>⚠️</span> ${msg}` : `<span>✅</span> ${msg}`;
+      document.getElementById('toast-container').appendChild(box);
+      setTimeout(() => box.remove(), 3000);
+    };
 
-    // ==================== APP INITIALIZATION ====================
-    async function initApp() {
-      // Set date immediately
+    const setStatus = (status) => {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      if (status) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+        text.textContent = "Online";
+        text.className = "text-emerald-600";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-rose-500";
+        text.textContent = "Offline/Error";
+        text.className = "text-rose-600";
+      }
+    };
+
+    // --- Initialization ---
+    const init = () => {
       document.getElementById('att-date').valueAsDate = new Date();
       
-      const q = query(collection(db, COLLECTION_NAME));
-      
-      // Listen for data
-      onSnapshot(q, (snapshot) => {
-        // SUCCESS
-        isConnected = true;
-        setStatus('ok', 'Online');
-        
-        const tempStudents = [];
-        const tempConfigs = [];
-        const tempClasses = new Set();
+      const q = query(collection(db, COLLECTION));
+      onSnapshot(q, (snap) => {
+        setStatus(true);
+        const rawStudents = [];
+        const rawConfigs = [];
+        const rawClasses = new Set();
 
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          data.id = doc.id;
-          
+        snap.forEach(d => {
+          const data = d.data();
+          data.id = d.id;
           if (data.type === 'student') {
-            tempStudents.push(data);
-            if(data.class_name) tempClasses.add(data.class_name);
-          } else if (data.type === 'config') {
-            tempConfigs.push(data);
+            rawStudents.push(data);
+            if(data.class_name) rawClasses.add(data.class_name);
           }
+          if (data.type === 'config') rawConfigs.push(data);
         });
 
-        students = tempStudents.sort((a,b) => a.student_id.localeCompare(b.student_id));
-        configs = tempConfigs.sort((a,b) => a.created_at - b.created_at);
-        classes = tempClasses;
+        // Sort data
+        students = rawStudents.sort((a,b) => a.student_id.localeCompare(b.student_id));
+        configs = rawConfigs.sort((a,b) => a.created_at - b.created_at);
+        classes = rawClasses;
 
-        updateUI();
+        // Update UI
+        renderStudentList();
+        renderConfigList();
+        updateClassDropdowns();
+        
+        // Refresh Current Tab
+        if(!document.getElementById('score-section').classList.contains('hidden')) renderScoreTable();
+        if(!document.getElementById('attendance-section').classList.contains('hidden')) renderAttendance();
 
-      }, (error) => {
-        // ERROR HANDLING
-        console.error("Firebase Error:", error);
-        if (error.code === 'permission-denied') {
-            setStatus('error', 'สิทธิ์ถูกปฏิเสธ (Check Rules)');
-            showToast("Error: สิทธิ์ถูกปฏิเสธ กรุณาแก้ Rules ใน Firebase", "error");
-        } else {
-            setStatus('error', 'Offline');
-        }
+      }, (err) => {
+        console.error(err);
+        setStatus(false);
       });
-    }
+    };
 
-    // ==================== UI UPDATES ====================
-    function updateUI() {
-      // 1. Update Student List Preview
-      const tbody = document.getElementById('student-list-preview');
-      document.getElementById('total-students').textContent = students.length;
-      
-      if(students.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">ยังไม่มีข้อมูลนักเรียน</td></tr>';
-      } else {
-         tbody.innerHTML = students.map(s => `
-            <tr class="border-b hover:bg-gray-50">
-              <td class="px-4 py-2">${s.student_id}</td>
-              <td class="px-4 py-2">${s.full_name}</td>
-              <td class="px-4 py-2"><span class="bg-gray-100 px-2 py-0.5 rounded text-xs">${s.class_name}</span></td>
-              <td class="px-4 py-2">
-                <button onclick="window.deleteStudent('${s.id}')" class="text-red-500 hover:text-red-700">🗑️</button>
-              </td>
-            </tr>
-         `).join('');
+    // --- UI Renderers ---
+    const renderStudentList = () => {
+      const tbody = document.getElementById('student-list-body');
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">ยังไม่มีรายชื่อนักเรียน</td></tr>';
+        return;
       }
-
-      // 2. Update Class Dropdowns
-      const classOptions = ['<option value="">ทั้งหมด</option>', ...Array.from(classes).sort().map(c => `<option value="${c}">${c}</option>`)].join('');
-      document.getElementById('score-filter-class').innerHTML = classOptions;
-      
-      const attOptions = ['<option value="">-- เลือกห้อง --</option>', ...Array.from(classes).sort().map(c => `<option value="${c}">${c}</option>`)].join('');
-      document.getElementById('att-class-select').innerHTML = attOptions;
-
-      // 3. Update Config List
-      document.getElementById('score-config-list').innerHTML = configs.map(c => `
-         <div class="flex justify-between items-center bg-gray-50 p-2 rounded border">
-           <div><span class="font-bold">${c.name}</span> <span class="text-sm text-gray-500">(Max: ${c.max}, Weight: ${c.weight}%)</span></div>
-           <button onclick="window.deleteConfig('${c.id}')" class="text-red-500 text-sm">ลบ</button>
-         </div>
+      tbody.innerHTML = students.map(s => `
+        <tr class="hover:bg-slate-50 group transition-colors">
+          <td class="px-4 py-3 font-medium text-slate-700">${s.student_id}</td>
+          <td class="px-4 py-3">${s.full_name}</td>
+          <td class="px-4 py-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold">${s.class_name}</span></td>
+          <td class="px-4 py-3 text-center">
+            <button onclick="deleteStudent('${s.id}')" class="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded hover:bg-rose-50">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            </button>
+          </td>
+        </tr>
       `).join('');
+    };
 
-      // 4. Refresh Active Tab View if needed
-      if(!document.getElementById('score-section').classList.contains('hidden')) renderScoreTable();
-      if(!document.getElementById('attendance-section').classList.contains('hidden')) window.loadAttendanceView();
-    }
-
-    // ==================== ADD STUDENT LOGIC ====================
-    window.addSingleStudent = async function() {
-      const id = document.getElementById('add-id').value.trim();
-      const name = document.getElementById('add-name').value.trim();
-      const className = document.getElementById('add-class').value.trim();
-
-      if (!id || !name || !className) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return; }
-      if (students.some(s => s.student_id === id)) { showToast('รหัสนักเรียนซ้ำ', 'error'); return; }
-
-      try {
-        await addDoc(collection(db, COLLECTION_NAME), {
-          type: 'student',
-          student_id: id,
-          full_name: name,
-          class_name: className,
-          scores: {},
-          attendance: {}
-        });
-        showToast('เพิ่มนักเรียนเรียบร้อย');
-        document.getElementById('add-id').value = '';
-        document.getElementById('add-name').value = '';
-      } catch (e) {
-        showToast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+    const renderConfigList = () => {
+      const container = document.getElementById('config-list-container');
+      if(configs.length === 0) {
+        container.innerHTML = '<div class="text-center p-4 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-slate-400 text-sm">ยังไม่มีหัวข้อคะแนน (เพิ่มด้านบน)</div>';
+        return;
       }
-    }
+      container.innerHTML = configs.map(c => `
+        <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-sky-200 transition-colors">
+          <div>
+            <div class="font-bold text-slate-700">${c.name}</div>
+            <div class="text-xs text-slate-500">เต็ม: ${c.max} | น้ำหนัก: ${c.weight}%</div>
+          </div>
+          <button onclick="deleteConfig('${c.id}')" class="text-rose-500 hover:text-rose-700 text-sm font-medium px-2 py-1 rounded hover:bg-rose-50">ลบ</button>
+        </div>
+      `).join('');
+    };
 
-    window.addMultipleStudents = async function() {
-      const text = document.getElementById('add-multi-text').value;
-      const lines = text.split('\n');
-      let count = 0;
+    window.renderScoreTable = () => {
+      const thead = document.getElementById('score-table-head');
+      const tbody = document.getElementById('score-table-body');
+      const filter = document.getElementById('score-class-filter').value;
+      const filtered = filter ? students.filter(s => s.class_name === filter) : students;
 
-      for (let line of lines) {
-        const parts = line.split(',').map(s => s.trim());
-        if (parts.length >= 3) {
-          const [id, name, className] = parts;
-          if (id && name && className && !students.some(s => s.student_id === id)) {
-            await addDoc(collection(db, COLLECTION_NAME), {
-               type: 'student', student_id: id, full_name: name, class_name: className, scores: {}, attendance: {}
-            });
-            count++;
-          }
-        }
-      }
-      showToast(`เพิ่มนักเรียนสำเร็จ ${count} คน`);
-      document.getElementById('add-multi-text').value = '';
-    }
-
-    window.importStudentsFromFile = function() {
-      const fileInput = document.getElementById('import-file');
-      const file = fileInput.files[0];
-      if (!file) { showToast('กรุณาเลือกไฟล์ก่อน', 'error'); return; }
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const text = e.target.result;
-        const rows = text.split('\n');
-        let count = 0;
-        
-        const promises = [];
-        for (let i = 1; i < rows.length; i++) { 
-           const cols = rows[i].split(',').map(s => s.trim());
-           if (cols.length >= 3) {
-             const [id, name, className] = cols;
-             if (id && name && className && !students.some(s => s.student_id === id)) {
-                promises.push(addDoc(collection(db, COLLECTION_NAME), {
-                   type: 'student', student_id: id, full_name: name, class_name: className, scores: {}, attendance: {}
-                }));
-                count++;
-             }
-           }
-        }
-        
-        await Promise.all(promises);
-        showToast(`นำเข้าไฟล์สำเร็จ ${count} คน`);
-        fileInput.value = '';
-        document.getElementById('file-name').textContent = 'ยังไม่ได้เลือกไฟล์';
-      };
-      reader.readAsText(file);
-    }
-
-    window.downloadTemplate = function() {
-      const csvContent = "\uFEFFรหัสนักเรียน,ชื่อ-นามสกุล,ห้องเรียน\n66001,ด.ช.ตัวอย่าง รักดี,ม.1/1";
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "student_template.csv";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    window.deleteStudent = async function(id) {
-      if(confirm('ต้องการลบนักเรียนคนนี้?')) {
-        await deleteDoc(doc(db, COLLECTION_NAME, id));
-        showToast('ลบเรียบร้อย');
-      }
-    }
-
-    // ==================== SCORE LOGIC ====================
-    window.addScoreConfig = async function() {
-      const name = document.getElementById('config-name').value;
-      const max = parseFloat(document.getElementById('config-max').value);
-      const weight = parseFloat(document.getElementById('config-weight').value);
-      
-      if(!name || !max || !weight) return;
-      
-      await addDoc(collection(db, COLLECTION_NAME), {
-        type: 'config', name, max, weight, created_at: Date.now()
+      // 1. Build Header
+      let headers = `
+        <th class="px-4 py-3 text-left bg-slate-100 min-w-[80px]">รหัส</th>
+        <th class="px-4 py-3 text-left bg-slate-100 min-w-[150px]">ชื่อ-สกุล</th>
+      `;
+      configs.forEach(c => {
+        headers += `<th class="px-2 py-3 text-center bg-sky-50 text-sky-700 min-w-[80px] border-l border-white">${c.name}<br><span class="text-[10px] opacity-70">(${c.max})</span></th>`;
       });
-      document.getElementById('config-name').value = '';
-    }
+      headers += `<th class="px-4 py-3 text-center bg-slate-100 min-w-[80px] border-l border-white">รวม</th>
+                  <th class="px-4 py-3 text-center bg-slate-100 min-w-[60px]">เกรด</th>`;
+      thead.innerHTML = headers;
 
-    window.deleteConfig = async function(id) {
-       if(confirm('ลบหัวข้อคะแนนนี้?')) {
-         await deleteDoc(doc(db, COLLECTION_NAME, id));
-       }
-    }
+      // 2. Build Body
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${4 + configs.length}" class="p-8 text-center text-slate-400">ไม่พบรายชื่อนักเรียน</td></tr>`;
+        return;
+      }
 
-    window.renderScoreTable = function() {
-       const tbody = document.getElementById('score-table-body');
-       const filterClass = document.getElementById('score-filter-class').value;
-       const filteredStudents = filterClass ? students.filter(s => s.class_name === filterClass) : students;
-       
-       // Clear old headers (keep first 3)
-       const headerRow = document.querySelector('#score-section thead tr');
-       while(headerRow.children.length > 6) headerRow.removeChild(headerRow.children[3]); 
-       
-       const baseHeaders = `
-         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">รหัส</th>
-         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">ชื่อ-สกุล</th>
-         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">ห้อง</th>
-       `;
-       const configHeaders = configs.map(c => `<th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 bg-sky-100">${c.name}<br><span class="text-xs">(${c.max})</span></th>`).join('');
-       const endHeaders = `
-         <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">รวม</th>
-         <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">เกรด</th>
-       `;
-       headerRow.innerHTML = baseHeaders + configHeaders + endHeaders;
+      tbody.innerHTML = filtered.map((s, idx) => {
+        const scores = s.scores || {};
+        let totalWeight = 0;
+        
+        const inputs = configs.map(c => {
+          const val = scores[c.id] !== undefined ? scores[c.id] : '';
+          // Calculate weight for display
+          if(val !== '') totalWeight += (parseFloat(val) / c.max) * c.weight;
+          
+          return `
+            <td class="p-1 border-l border-slate-100 text-center">
+              <input type="number" 
+                value="${val}" 
+                min="0" max="${c.max}"
+                class="w-full text-center py-1.5 rounded bg-white hover:bg-sky-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition-all text-slate-700 font-medium"
+                onchange="updateScore('${s.id}', '${c.id}', this.value)"
+              >
+            </td>
+          `;
+        }).join('');
 
-       if(filteredStudents.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-gray-400">ไม่พบนักเรียน</td></tr>';
+        const grade = calculateGrade(totalWeight);
+        const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
+
+        return `
+          <tr class="${rowBg} hover:bg-sky-50 transition-colors">
+            <td class="px-4 py-3 font-medium text-slate-700 text-sm">${s.student_id}</td>
+            <td class="px-4 py-3 text-sm">${s.full_name}</td>
+            ${inputs}
+            <td class="px-4 py-3 text-center font-bold text-sky-600 border-l border-slate-100">${totalWeight.toFixed(1)}</td>
+            <td class="px-4 py-3 text-center font-bold text-slate-700">${grade}</td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    window.renderAttendance = () => {
+       const grid = document.getElementById('att-grid');
+       const cls = document.getElementById('att-class-select').value;
+       const date = document.getElementById('att-date').value;
+
+       if(!cls || !date) {
+         grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">กรุณาเลือกห้องเรียนและวันที่</div>';
          return;
        }
 
-       tbody.innerHTML = filteredStudents.map(s => {
-         const scores = s.scores || {};
-         let total = 0;
-         const scoreInputs = configs.map(c => {
-           const val = scores[c.id] || 0;
-           total += (val / c.max) * c.weight;
-           return `<td class="p-2 text-center"><input type="number" value="${val}" min="0" max="${c.max}" 
-                   class="w-16 border rounded text-center text-sm focus:bg-sky-50"
-                   onchange="window.updateScore('${s.id}', '${c.id}', this.value)"></td>`;
-         }).join('');
-         
+       const list = students.filter(s => s.class_name === cls);
+       if(list.length === 0) {
+         grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">ไม่มีนักเรียนในห้องนี้</div>';
+         return;
+       }
+
+       grid.innerHTML = list.map(s => {
+         const status = (s.attendance || {})[date] || 'present';
+         const styles = {
+           present: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+           absent: 'bg-rose-50 border-rose-200 text-rose-700',
+           sick: 'bg-amber-50 border-amber-200 text-amber-700'
+         };
+         const icons = { present: '✅ มา', absent: '❌ ขาด', sick: '🤒 ลา' };
+
          return `
-           <tr class="border-b">
-             <td class="px-4 py-2">${s.student_id}</td>
-             <td class="px-4 py-2">${s.full_name}</td>
-             <td class="px-4 py-2 text-gray-500">${s.class_name}</td>
-             ${scoreInputs}
-             <td class="px-4 py-2 text-center font-bold text-sky-600">${total.toFixed(1)}</td>
-             <td class="px-4 py-2 text-center font-bold">${calculateGrade(total)}</td>
-           </tr>
+           <div onclick="toggleAtt('${s.id}')" 
+                class="cursor-pointer border-2 rounded-xl p-3 select-none transition-all hover:shadow-md active:scale-95 ${styles[status]} border-opacity-60 hover:border-opacity-100">
+             <div class="flex justify-between items-start mb-2">
+               <span class="font-bold text-lg">${s.student_id}</span>
+               <span class="text-xs bg-white bg-opacity-50 px-2 py-0.5 rounded-full backdrop-blur-sm">${icons[status]}</span>
+             </div>
+             <div class="text-sm truncate opacity-90">${s.full_name}</div>
+           </div>
          `;
        }).join('');
-    }
+    };
 
-    window.updateScore = async function(studentId, configId, value) {
-       const student = students.find(s => s.id === studentId);
+    const updateClassDropdowns = () => {
+      const opts = ['<option value="">ทั้งหมด</option>', ...Array.from(classes).sort().map(c => `<option value="${c}">${c}</option>`)].join('');
+      document.getElementById('score-class-filter').innerHTML = opts;
+      document.getElementById('att-class-select').innerHTML = '<option value="">-- เลือกห้อง --</option>' + Array.from(classes).sort().map(c => `<option value="${c}">${c}</option>`).join('');
+    };
+
+    // --- Actions ---
+    window.addSingleStudent = async () => {
+      const id = document.getElementById('add-id').value.trim();
+      const name = document.getElementById('add-name').value.trim();
+      const cls = document.getElementById('add-class').value.trim();
+      if(!id || !name || !cls) return showToast('กรุณากรอกข้อมูลให้ครบ', 'error');
+      
+      // Check duplicate
+      if(students.some(s => s.student_id === id)) return showToast('รหัสนักเรียนซ้ำ', 'error');
+
+      try {
+        await addDoc(collection(db, COLLECTION), { type: 'student', student_id: id, full_name: name, class_name: cls, scores: {}, attendance: {} });
+        document.getElementById('add-id').value = '';
+        document.getElementById('add-name').value = '';
+        showToast('เพิ่มนักเรียนเรียบร้อย');
+      } catch(e) { showToast(e.message, 'error'); }
+    };
+
+    window.addMultipleStudents = async () => {
+      const text = document.getElementById('add-multi-text').value;
+      if(!text) return;
+      const lines = text.split('\n');
+      let count = 0;
+      for(let line of lines) {
+        const [id, name, cls] = line.split(',').map(s=>s.trim());
+        if(id && name && cls && !students.some(s=>s.student_id === id)) {
+           await addDoc(collection(db, COLLECTION), { type: 'student', student_id: id, full_name: name, class_name: cls, scores: {}, attendance: {} });
+           count++;
+        }
+      }
+      showToast(`เพิ่มสำเร็จ ${count} คน`);
+      document.getElementById('add-multi-text').value = '';
+    };
+
+    window.addScoreConfig = async () => {
+      const name = document.getElementById('config-name').value;
+      const max = parseFloat(document.getElementById('config-max').value);
+      const weight = parseFloat(document.getElementById('config-weight').value);
+      if(!name || !max || !weight) return showToast('กรอกข้อมูลไม่ครบ', 'error');
+
+      await addDoc(collection(db, COLLECTION), { type: 'config', name, max, weight, created_at: Date.now() });
+      document.getElementById('config-name').value = '';
+      document.getElementById('config-max').value = '';
+      document.getElementById('config-weight').value = '';
+      showToast('เพิ่มหัวข้อคะแนนแล้ว');
+    };
+
+    window.deleteStudent = async (id) => {
+      if(confirm('ยืนยันการลบนักเรียนคนนี้?')) {
+        await deleteDoc(doc(db, COLLECTION, id));
+        showToast('ลบนักเรียนแล้ว');
+      }
+    };
+
+    window.deleteConfig = async (id) => {
+      if(confirm('ยืนยันการลบหัวข้อนี้? คะแนนในช่องนี้จะหายไป')) {
+        await deleteDoc(doc(db, COLLECTION, id));
+        showToast('ลบหัวข้อคะแนนแล้ว');
+      }
+    };
+
+    window.updateScore = async (sid, cid, val) => {
+       const student = students.find(s => s.id === sid);
        const scores = student.scores || {};
-       scores[configId] = parseFloat(value);
-       await updateDoc(doc(db, COLLECTION_NAME, studentId), { scores });
-    }
+       scores[cid] = parseFloat(val);
+       await updateDoc(doc(db, COLLECTION, sid), { scores });
+       // Note: Firestore listener will auto-update UI, but for smoothness in input we rely on local DOM state mostly
+       renderScoreTable(); // Recalculate totals
+    };
 
-    function calculateGrade(score) {
-      if(score >= 80) return 4;
-      if(score >= 75) return 3.5;
-      if(score >= 70) return 3;
-      if(score >= 65) return 2.5;
-      if(score >= 60) return 2;
-      if(score >= 55) return 1.5;
-      if(score >= 50) return 1;
-      return 0;
-    }
+    window.toggleAtt = async (sid) => {
+       const date = document.getElementById('att-date').value;
+       const student = students.find(s => s.id === sid);
+       const att = student.attendance || {};
+       const cur = att[date] || 'present';
+       const map = { present: 'absent', absent: 'sick', sick: 'present' };
+       att[date] = map[cur];
+       
+       // Optimistic update
+       renderAttendance();
+       // Save
+       await updateDoc(doc(db, COLLECTION, sid), { attendance: att });
+    };
+
+    window.saveAttendance = () => showToast('บันทึกอัตโนมัติเรียบร้อยแล้ว');
+
+    // --- Utils ---
+    const calculateGrade = (score) => {
+       if(score >= 80) return 4;
+       if(score >= 75) return 3.5;
+       if(score >= 70) return 3;
+       if(score >= 65) return 2.5;
+       if(score >= 60) return 2;
+       if(score >= 55) return 1.5;
+       if(score >= 50) return 1;
+       return 0;
+    };
+
+    window.switchTab = (tab) => {
+      ['setup', 'score', 'attendance'].forEach(t => {
+         const btn = document.getElementById(`tab-${t}`);
+         const sec = document.getElementById(`${t}-section`);
+         if(t === tab) {
+            btn.className = "tab-active px-6 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm";
+            sec.classList.remove('hidden');
+         } else {
+            btn.className = "tab-inactive px-6 py-2 rounded-lg text-sm font-semibold transition-all";
+            sec.classList.add('hidden');
+         }
+      });
+      if(tab === 'score') renderScoreTable();
+      if(tab === 'attendance') renderAttendance();
+    };
+
+    window.showSubTab = (tab) => {
+       const s = document.getElementById('view-single');
+       const m = document.getElementById('view-multi');
+       const bs = document.getElementById('btn-single');
+       const bm = document.getElementById('btn-multi');
+       
+       if(tab === 'single') {
+         s.classList.remove('hidden'); m.classList.add('hidden');
+         bs.className = "px-4 py-2 text-sm font-medium border-b-2 border-sky-600 text-sky-700";
+         bm.className = "px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+       } else {
+         s.classList.add('hidden'); m.classList.remove('hidden');
+         bm.className = "px-4 py-2 text-sm font-medium border-b-2 border-sky-600 text-sky-700";
+         bs.className = "px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700";
+       }
+    };
     
-    window.exportScores = function() {
+    window.exportScores = () => {
         let csv = "\uFEFFรหัส,ชื่อ,ห้อง";
         configs.forEach(c => csv += `,${c.name}`);
         csv += ",รวม,เกรด\n";
@@ -545,7 +568,7 @@
            configs.forEach(c => {
              const val = (s.scores || {})[c.id] || 0;
              total += (val / c.max) * c.weight;
-             row += `,${val}`;
+             row += `,${(s.scores || {})[c.id] || 0}`;
            });
            row += `,${total.toFixed(2)},${calculateGrade(total)}`;
            csv += row + "\n";
@@ -553,104 +576,11 @@
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "scores_export.csv";
-        document.body.appendChild(link);
+        link.download = "scores.csv";
         link.click();
-        document.body.removeChild(link);
-    }
+    };
 
-    // ==================== ATTENDANCE LOGIC ====================
-    window.loadAttendanceView = function() {
-      const classSelect = document.getElementById('att-class-select').value;
-      const date = document.getElementById('att-date').value;
-      const grid = document.getElementById('attendance-grid');
-      
-      if(!classSelect || !date) {
-        grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">กรุณาเลือกห้องเรียนและวันที่</div>';
-        return;
-      }
-
-      const classStudents = students.filter(s => s.class_name === classSelect);
-      if(classStudents.length === 0) {
-        grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">ไม่พบนักเรียนในห้องนี้</div>';
-        return;
-      }
-
-      grid.innerHTML = classStudents.map(s => {
-         const status = (s.attendance || {})[date] || 'present';
-         let colorClass = 'bg-emerald-100 border-emerald-500';
-         let icon = '✅';
-         let label = 'มา';
-         if(status === 'absent') { colorClass = 'bg-red-100 border-red-500'; icon = '❌'; label = 'ขาด'; }
-         if(status === 'sick') { colorClass = 'bg-yellow-100 border-yellow-500'; icon = '🤒'; label = 'ลาป่วย'; }
-
-         return `
-           <div onclick="window.toggleAttendance('${s.id}')" id="card-${s.id}" 
-                class="cursor-pointer border-2 rounded-xl p-4 transition-all hover:scale-105 ${colorClass}">
-              <div class="flex justify-between items-center">
-                 <div>
-                   <div class="font-bold text-gray-800">${s.student_id}</div>
-                   <div class="text-sm">${s.full_name}</div>
-                 </div>
-                 <div class="text-2xl">${icon}</div>
-              </div>
-              <div class="text-xs font-bold mt-2 text-gray-600 status-label">${label}</div>
-           </div>
-         `;
-      }).join('');
-    }
-
-    window.toggleAttendance = async function(id) {
-       const date = document.getElementById('att-date').value;
-       const student = students.find(s => s.id === id);
-       if(!student.attendance) student.attendance = {};
-       const current = student.attendance[date] || 'present';
-       const states = ['present', 'absent', 'sick'];
-       const next = states[(states.indexOf(current) + 1) % states.length];
-       student.attendance[date] = next;
-       window.loadAttendanceView();
-    }
-
-    window.saveAttendance = async function() {
-       const date = document.getElementById('att-date').value;
-       const classSelect = document.getElementById('att-class-select').value;
-       const classStudents = students.filter(s => s.class_name === classSelect);
-       const promises = classStudents.map(s => {
-          return updateDoc(doc(db, COLLECTION_NAME, s.id), { attendance: s.attendance });
-       });
-       await Promise.all(promises);
-       showToast('บันทึกเวลาเรียนเรียบร้อย');
-    }
-
-    // ==================== UTILS ====================
-    window.switchTab = function(tabId) {
-       ['setup', 'score', 'attendance'].forEach(t => {
-          document.getElementById(`tab-${t}`).className = t === tabId ? 
-             'tab-active px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2' : 
-             'tab-inactive px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2';
-          document.getElementById(`${t}-section`).className = t === tabId ? 'animate-fade space-y-6' : 'hidden';
-       });
-       updateUI();
-    }
-
-    window.switchSubTab = function(subId) {
-       ['single', 'multiple', 'file'].forEach(t => {
-          document.getElementById(`subtab-${t}`).className = t === subId ? 'sub-tab-active py-2 px-4 text-sm' : 'sub-tab-inactive py-2 px-4 text-sm';
-          document.getElementById(`view-${t}`).className = t === subId ? 'animate-fade' : 'hidden';
-       });
-    }
-
-    window.showToast = function(msg, type = 'success') {
-       const box = document.createElement('div');
-       box.className = `${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'} text-white px-4 py-2 rounded shadow-lg text-sm animate-fade`;
-       box.textContent = msg;
-       document.getElementById('toast-container').appendChild(box);
-       setTimeout(() => box.remove(), 3000);
-    }
-
-    // Start
-    initApp();
-
+    init();
   </script>
 </body>
 </html>
